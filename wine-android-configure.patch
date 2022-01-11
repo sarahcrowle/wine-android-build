@@ -1,0 +1,13 @@
+--- wine-6.22-native/configure.ac	2022-01-09 01:03:20.728633813 -0700
++++ wine-6.22/configure.ac	2022-01-09 11:59:46.930012400 -0700
+@@ -3909,8 +3909,8 @@
+ programs/winetest/build.nfo:
+ 	@-\$(CC) -v 2>\$[@]
+ dlls/wineandroid.drv/wine-debug.apk: dlls/wineandroid.drv/build.gradle ${wine_srcdir}dlls/wineandroid.drv/AndroidManifest.xml ${wine_srcdir}dlls/wineandroid.drv/WineActivity.java ${wine_srcdir}dlls/wineandroid.drv/wine.svg
+-	cd dlls/wineandroid.drv && gradle -q -Psrcdir=$srcdir assembleDebug
+-	mv dlls/wineandroid.drv/build/outputs/apk/wine-debug.apk \$[@]])
++	cd dlls/wineandroid.drv && gradle --info --stacktrace -i -Psrcdir=$srcdir assembleDebug
++	mv dlls/wineandroid.drv/build/outputs/apk/debug/wine-debug.apk \$[@]])
+ 
+ dnl Misc rules
+ 

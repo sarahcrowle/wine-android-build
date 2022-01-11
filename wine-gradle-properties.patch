@@ -1,0 +1,4 @@
+--- wine-6.22-native/dlls/wineandroid.drv/gradle.properties	1969-12-31 17:00:00.000000000 -0700
++++ wine-6.22/dlls/wineandroid.drv/gradle.properties	2022-01-09 12:08:06.861769800 -0700
+@@ -0,0 +1 @@
++org.gradle.jvmargs=-Xmx8g
