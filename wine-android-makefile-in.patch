@@ -1,0 +1,11 @@
+--- wine-native/Makefile.in	2022-01-12 23:03:31.309688379 -0700
++++ wine/Makefile.in	2022-01-12 23:23:43.937804178 -0700
+@@ -126,7 +126,7 @@
+ 
+ dlls/wineandroid.drv/wine-debug.apk: dlls/wineandroid.drv/build.gradle $(srcdir)/dlls/wineandroid.drv/AndroidManifest.xml $(srcdir)/dlls/wineandroid.drv/WineActivity.java $(srcdir)/dlls/wineandroid.drv/wine.svg
+ 	cd dlls/wineandroid.drv && gradle -q -Psrcdir=$(srcdir) assembleDebug
+-	mv dlls/wineandroid.drv/build/outputs/apk/wine-debug.apk $@
++	mv dlls/wineandroid.drv/build/outputs/apk/debug/wine-debug.apk $@
+ 
+ # Misc rules
+ 

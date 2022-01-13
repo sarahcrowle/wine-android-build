@@ -13,6 +13,10 @@ Automated tools to patch and build WINE for Android.
 - By default, the script actually uses a vanilla build of Wine as a base that gets patched with the org.winehq.wine package that the build generates. This seems to make more compatible builds?
   If you want to use the full build that the script makes, use `wine-debug.apk`. Otherwise, you're mostly going to want `wine-patched.apk` instead.
 
+## Recommended (known working) Wine commit hash/version combos
+- "4336ed0b84b3dd3097bbbbf8e4b9de2e4d444ad7 6.4" - Wine 6.4 release version
+    * You can safely ignore the wine-android-configure patch failure. That part of configure.ac is irrelevant in this old version.
+
 
 ## Interesting notes (aka the WTF section)
 

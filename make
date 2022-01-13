@@ -55,6 +55,7 @@ if [ ! -d wine ]; then
 
     echo "patching..."
     patch -p1 -d wine < ../wine-android-configure.patch
+    patch -p1 -d wine < ../wine-android-makefile-in.patch
     patch -p1 -d wine < ../wine-android-gradle.patch
     patch -p1 -d wine < ../wine-gradle-properties.patch
     #read -p "Press any key to resume ..."

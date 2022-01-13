@@ -2,6 +2,11 @@ android/
 build/
 android.old/
 build.old/
+freetype-*/
 dex-tools-2.1/
 *.zip
 *.apk
+*.xz
+*.gz
+*.tmp
+*.jar
