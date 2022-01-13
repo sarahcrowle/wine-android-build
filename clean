@@ -1,0 +1,6 @@
+#!/bin/bash
+
+rm -rf android
+rm -rf build
+rm -rf dex-tools-2.1
+rm -rf *.zip
