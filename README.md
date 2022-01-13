@@ -2,15 +2,16 @@
 Automated tools to patch and build WINE for Android.
 
 ## How to build
-- You're gonna need some prerequisites. Namely, Gradle, Python (2), and whatever you need to build a normal version of Wine. On a Debian based system, you can get
+- You're gonna need some prerequisites. Namely, Git, Gradle, Python (2), and whatever you need to build a normal version of Wine. On a Debian based system, you can get
   everything you need with:
   ```
-  sudo apt install gradle python
+  sudo apt install gradle python git
   sudo apt build-dep wine
   ```
-- Now that you've got everything, IN THEORY, you should be able to clone this repo into a folder somewhere, then run `./make`. Note the `./`. I don't know why
-  I named it so ambiguously.
-- You'll have an APK in `build/wine-6.22/dlls/wineandroid.drv/wine-debug.apk`.
+- Now that you've got everything, IN THEORY, you should be able to clone this repo into a folder somewhere, then run `./make <wine commit hash> <compatible vanilla wine version>`. 
+  Note the `./`. I don't know why I named it so ambiguously.
+- By default, the script actually uses a vanilla build of Wine as a base that gets patched with the org.winehq.wine package that the build generates. This seems to make more compatible builds?
+  If you want to use the full build that the script makes, use `wine-debug.apk`. Otherwise, you're mostly going to want `wine-patched.apk` instead.
 
 
 ## Interesting notes (aka the WTF section)
@@ -30,6 +31,8 @@ Automated tools to patch and build WINE for Android.
       attempt in `make.py` (which you shouldn't use lmao)
     * You should really build this in a Docker container or something. The cleaner the environment the better. I did all my testing in a Debian 11 VM. A container
       would have been easier. Seriously.
+- Some versions after 6.5 hang on "Setting up Windows environment...". Reason unknown. Some change between 6.4 and 6.5?
+- You may be familiar with the infamous "gray screen" bug in the Android port. This doesn't happen in Wine versions between (at least) 6.0 and 6.4... Why?
  
  ## License
  For reasons of not caring enough to look up if the LGPL has to spread to my script or not, due to the included Wine patches this repository is under the LGPL.

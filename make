@@ -27,6 +27,13 @@ yes | cmdline-tools/bin/sdkmanager --sdk_root=$(pwd) --licenses > /dev/null
 
 cd ..
 
+echo "setting up dex2jar..."
+wget -nc https://github.com/pxb1988/dex2jar/releases/download/v2.1/dex2jar-2.1.zip
+unzip -n dex2jar-2.1.zip > /dev/null
+
+echo "downloading vanilla wine for android..."
+wget -nc https://dl.winehq.org/wine-builds/android/$2-x86.apk -O wine-vanilla.apk
+
 #rm -rf build
 mkdir build
 cd build
@@ -35,25 +42,26 @@ echo setting up ndk...
 $NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-26 --install-dir=android-toolchain --arch=$TOOLCHAIN_VERSION --verbose
 
 
-if [ ! -d wine-6.22 ]; then
-    echo "downloading wine..."
-    wget -nc https://dl.winehq.org/wine/source/6.x/wine-6.22.tar.xz
+if [ ! -d wine ]; then
+    echo "downloading wine source..."
+    wget -nc https://github.com/wine-mirror/wine/archive/$1.zip -O wine.zip
 
     echo "extracting..."
-    tar xf wine-6.22.tar.xz
+    unzip wine.zip
+    mv wine-$1 wine
 
     echo "copying..."
-    cp -r wine-6.22 wine-6.22-native
+    cp -r wine wine-native
 
     echo "patching..."
-    patch -p1 -d wine-6.22 < ../wine-android-configure.patch
-    patch -p1 -d wine-6.22 < ../wine-android-gradle.patch
-    patch -p1 -d wine-6.22 < ../wine-gradle-properties.patch
+    patch -p1 -d wine < ../wine-android-configure.patch
+    patch -p1 -d wine < ../wine-android-gradle.patch
+    patch -p1 -d wine < ../wine-gradle-properties.patch
     #read -p "Press any key to resume ..."
 fi
 
-echo "building native wine 6.22"
-cd wine-6.22-native
+echo "building native wine"
+cd wine-native
 ./configure --enable-win64 > /dev/null
 make -j`nproc` > /dev/null
 
@@ -73,10 +81,10 @@ make -j`nproc` > /dev/null && make install > /dev/null
 export FREETYPE_CFLAGS="-I`pwd`/../freetype-2.11.1/output/include/freetype2"
 export FREETYPE_LIBS="-L`pwd`/../freetype-2.11.1/output/lib"
 
-echo "here we go! making wine 6.22 for android!"
-cd ../wine-6.22
+echo "here we go! making wine for android!"
+cd ../wine
 ./configure --host=$TOOLCHAIN_TRIPLE host_alias=$TOOLCHAIN_TRIPLE \
-    --with-wine-tools=../wine-6.22-native --prefix=`pwd`/dlls/wineandroid.drv/assets --enable-win64 CC=clang CXX=clang++ > /dev/null
+    --with-wine-tools=../wine-native --prefix=`pwd`/dlls/wineandroid.drv/assets --enable-win64 CC=clang CXX=clang++ > /dev/null
 autoreconf
 make -j`nproc` > /dev/null && make install > /dev/null
 
@@ -85,6 +93,17 @@ cp ../freetype-2.11.1/output/lib/libfreetype.so dlls/wineandroid.drv/assets/x86_
 cd dlls/wineandroid.drv
 make clean > /dev/null
 make > /dev/null
+cd ../../../../
+echo `pwd`
 
-echo "all done!"
+echo "committing crimes..."
+cp wine-vanilla.apk wine-patched.apk
+bash gimmeapk .
+unzip wine-debug.apk classes.dex > /dev/null                                           # extract the DEX from our new build
+dex-tools-2.1/d2j-dex2jar.sh -f -o fresh-build.jar classes.dex > /dev/null             # convert it to a JAR
+rm classes.dex                                                                         # don't need the DEX anymore
+bash replaceclasses.sh wine-patched.apk fresh-build.jar org/winehq/wine > /dev/null    # patch the good, working build
+rm fresh-build.jar wine-debug.apk                                                      # clean up
+
+echo "all done! the build is in wine-patched.apk"
 exit

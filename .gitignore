@@ -2,3 +2,6 @@ android/
 build/
 android.old/
 build.old/
+dex-tools-2.1/
+*.zip
+*.apk

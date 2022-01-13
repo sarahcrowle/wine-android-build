@@ -1,0 +1,2 @@
+#!/bin/bash
+cp build/wine-7.0-rc5/dlls/wineandroid.drv/wine-debug.apk $1
