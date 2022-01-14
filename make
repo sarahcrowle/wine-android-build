@@ -4,6 +4,7 @@ require 'optparse'
 require 'set'
 require 'fileutils'
 require 'etc'
+require 'yaml'
 
 class String
     def black;          "\e[30m#{self}\e[0m" end
@@ -42,7 +43,7 @@ def ignore_exception
 # Parse arguments
 options = {}
 option_parser = OptionParser.new do |opts|
-    opts.banner = "Usage: make.rb -h <COMMIT HASH> -w <WINE VERSION> [options]"
+    opts.banner = "Usage: make.rb -h <COMMIT HASH> -w <WINE VERSION> [options] OR make.rb --[totally]clean OR make.rb -p <PROJECT DIR> [options]"
 
     opts.on("-c", "--ccompiler=C", "C compiler name for NDK build") do |name|
         options[:cc] = name
@@ -70,6 +71,14 @@ option_parser = OptionParser.new do |opts|
 
     opts.on("-N", "--newappname=NAME", "New name for the app's activity in launcher") do |name|
         options[:newappname] = name
+    end
+
+    opts.on("-i", "--icon=PNG", "Path to a PNG icon to use for the app") do |filename|
+        options[:iconfile] = filename
+    end
+
+    opts.on("-p", "--project=DIR", "Path to a project dir containing a wine-package.yml") do |dir|
+        options[:project] = dir
     end
 
     opts.on("--clean", "Clean out build/ directory") do |x|
@@ -113,6 +122,24 @@ option_parser = OptionParser.new do |opts|
     end
 end
 option_parser.parse!
+
+
+unless options[:project].nil?
+    all_option_types = [:cc, :cxx, :commithash, :wineversion, :freetypeversion, \
+                    :newpackagename, :newappname, :iconfile, :clean, :totallyclean, \
+                    :tools, :dlwine, :nativewine, :dlfreetype, :freetype, :androidwine, :dlvwine, :crimes]
+    
+    project = YAML.load(File.read(options[:project] + "/wine-package.yml").sub! "$PROJECTDIR", File.expand_path(options[:project]))
+    
+    for option in all_option_types
+        unless options.key?(option)
+            if project.key?(option)
+                puts "setting option from project: %s = %s" % [option.to_s, project[option]]
+                options[option] = project[option]
+            end
+        end
+    end
+end
 
 # require wine version and commit hash to be specified
 if options[:commithash].nil? or options[:wineversion].nil?
@@ -307,6 +334,13 @@ if options[:newpackagename] or options[:newappname]
     puts " -> Replacing package/app name...".blue.reverse_color
     puts "    -> New package name is %s, new app name is %s".green.reverse_color % [options[:newpackagename], options[:newappname]]
     system("bash replacenames %s %s wine-patched.apk" % [options[:newpackagename], options[:newappname]])
+end
+
+if options[:iconfile]
+    puts " -> Replacing icon files...".blue.reverse_color
+    options[:iconfile] = File.expand_path(options[:iconfile])
+    puts "    -> New icon file path is %s".green.reverse_color % [options[:iconfile]]
+    system("bash replaceicons %s wine-patched.apk" % [options[:iconfile]])
 end
 
 puts "########## BUILD COMPLETE! ##########".reverse_color
