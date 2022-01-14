@@ -15,15 +15,16 @@ Automated tools to patch and build WINE for Android.
 
 ## Recommended (known working) Wine commit hash/version combos
 - "4336ed0b84b3dd3097bbbbf8e4b9de2e4d444ad7 6.4" - Wine 6.4 release version
-    * You can safely ignore the wine-android-configure patch failure. That part of configure.ac is irrelevant in this old version.
-
+    * You can safely ignore the wine-android-configure patch failure. That part of configure.ac is irrelevant in this old version, since the Makefile.in patch covers that change.
+- "86eaf7eeb2603d1b13d18e3fe71a615e1ee14cee 7.0-rc5" - Wine 7.0-rc5 release candidate
+    * You can safely ignore the wine-android-makefile-in patch failure. That part of Makefile.in is irrelevant in this old version, since the configure.ac patch covers that change.
 
 ## Interesting notes (aka the WTF section)
 
-- At the moment, Wine must be built using a REALLY old NDK. (r15c to be exact). This is because of the new "unified headers" stuff that got deprecated not long
-  after that version.
-- You can't use an x86 build on an x86_64 device (this one is not REALLY all that bad, but it's annoying nonetheless)
-- You can't build Wine with GCC 4.9.x anymore. GCC 4.9.x is also the default for this ancient NDK. Thank god `clang` is still here in this version.
+- ~~At the moment, Wine must be built using a REALLY old NDK. (r15c to be exact). This is because of the new "unified headers" stuff that got deprecated not long
+  after that version.~~ Fixed 2022/01/13
+- ~~You can't use an x86 build on an x86_64 device (this one is not REALLY all that bad, but it's annoying nonetheless)~~ Was never a problem lol
+- ~~You can't build Wine with GCC 4.9.x anymore. GCC 4.9.x is also the default for this ancient NDK. Thank god `clang` is still here in this version.~~ Fixed 2022/01/13
 - The `./configure` script is broken for Android. The build won't work because it looks for the APK in the wrong place. Then how do they build the Android version
   upstream!?
 - The `build.gradle` script is also broken. The build won't work because jCenter doesn't exist. It also uses some super ancient versions of all the packages, which
