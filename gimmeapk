@@ -1,2 +1,2 @@
 #!/bin/bash
-find build/wine/dlls/wineandroid.drv -name \*.apk -exec cp {} ./wine-debug.apk \;
+find build/wine/dlls/wineandroid.drv -name \*.apk -exec cp {} $1/wine-debug.apk \;
