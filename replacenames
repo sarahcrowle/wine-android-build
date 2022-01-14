@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# usage: ./replacenames <new package name> <new app name> <apk>
+
+NEW_PACKAGE_NAME=$1
+NEW_APP_NAME=$2
+APK=$3
+APK_BASENAME=$(basename $APK .apk)
+
+echo "decompiling apk..."
+apktool/apktool d $APK > /dev/null
+
+echo "replacing names..."
+cd $APK_BASENAME
+sed -i "s/android:label=\"Wine\"/android:label=\"$2\"/" AndroidManifest.xml
+sed -i "s/package=\"org.winehq.wine\"/package=\"$1\"/" AndroidManifest.xml
+cd ..
+
+echo "rebuilding apk..."
+apktool/apktool b $APK_BASENAME -o $APK_BASENAME-unsigned.apk > /dev/null
+
+echo "signing..."
+dex-tools-2.1/d2j-apk-sign.sh -f -o $APK_BASENAME-rn.apk $APK_BASENAME-unsigned.apk
+
+rm $APK_BASENAME-unsigned.apk
+rm -rf $APK_BASENAME
