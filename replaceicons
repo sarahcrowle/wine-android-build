@@ -1,20 +1,17 @@
 #!/bin/bash
 
-# usage: ./replacenames <new package name> <new app name> <apk>
+# usage: ./replacenames <new icon file> <apk>
 
-NEW_PACKAGE_NAME=$1
-NEW_APP_NAME=$2
-APK=$3
+ICON_FILE=$1
+APK=$2
 APK_BASENAME=`basename $APK .apk`
 
 echo "decompiling apk..."
 apktool/apktool d $APK > /dev/null
 
-echo "replacing names..."
-cd $APK_BASENAME
-sed -i "s/android:label=\"Wine\"/android:label=\"$2\"/" AndroidManifest.xml
-sed -i "s/package=\"org.winehq.wine\"/package=\"$1\"/" AndroidManifest.xml
-cd ..
+echo "replacing icons..."
+# TODO: generate proper dpi aware sizes or whatever
+find $APK_BASENAME -name wine.png -exec cp $ICON_FILE {} \;
 
 echo "rebuilding apk..."
 apktool/apktool b $APK_BASENAME -o $APK_BASENAME-unsigned.apk > /dev/null
