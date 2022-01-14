@@ -47,6 +47,14 @@ echo "setting up dex2jar..."
 wget -nc https://github.com/pxb1988/dex2jar/releases/download/v2.1/dex2jar-2.1.zip
 unzip -n dex2jar-2.1.zip > /dev/null
 
+echo "setting up apktool..."
+mkdir apktool
+cd apktool
+wget -nc https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.6.0.jar -O apktool.jar
+wget -nc https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O apktool
+chmod +x apktool
+cd ..
+
 echo "downloading vanilla wine for android..."
 wget -nc https://dl.winehq.org/wine-builds/android/wine-$2-x86.apk -O wine-vanilla.apk
 
@@ -120,7 +128,7 @@ unzip wine-debug.apk classes.dex > /dev/null                                    
 dex-tools-2.1/d2j-dex2jar.sh -f -o fresh-build.jar classes.dex > /dev/null             # convert it to a JAR
 rm classes.dex                                                                         # don't need the DEX anymore
 bash replaceclasses.sh wine-patched.apk fresh-build.jar org/winehq/wine > /dev/null    # patch the good, working build
-rm fresh-build.jar wine-debug.apk                                                      # clean up
+rm fresh-build.jar                                                                     # clean up
 
 echo "all done! the build is in wine-patched.apk"
 exit
