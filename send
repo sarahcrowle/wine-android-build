@@ -7,9 +7,9 @@ ADB="`pwd`/android/platform-tools/adb"
 echo "$ADB"
 
 "$ADB" connect $1
-"$ADB" uninstall org.winehq.wine > /dev/null 2>&1
+"$ADB" uninstall $3 > /dev/null 2>&1
 "$ADB" push -p wine-$2.apk /data/local/tmp
 "$ADB" shell pm install /data/local/tmp/wine-$2.apk
 "$ADB" shell rm /data/local/tmp/wine-$2.apk
-"$ADB" shell am start -n $3/.WineActivity
+"$ADB" shell am start -n $3/org.winehq.wine.WineActivity
 "$ADB" disconnect
