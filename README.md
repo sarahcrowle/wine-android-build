@@ -1,5 +1,5 @@
-# wine-android-build
-Automated tools to patch and build WINE for Android.
+# Packaging tools for Wine Android
+Automated tools to patch and build Wine for Android.
 
 ## How to build
 - You're gonna need some prerequisites. Namely, Git, Gradle, Python (2), and whatever you need to build a normal version of Wine. On a Debian based system, you can get
