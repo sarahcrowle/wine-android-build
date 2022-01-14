@@ -1,134 +1,299 @@
-#!/bin/bash
+#!/usr/bin/env ruby
 
-# set up environment
-export ANDROID_HOME="`pwd`/android/"
-export NDK_ROOT="`pwd`/android/android-ndk-r17c/"
+require 'optparse'
+require 'set'
+require 'fileutils'
+require 'etc'
 
-export TOOLCHAIN_VERSION="x86_64"
-export TOOLCHAIN_TRIPLE="x86_64-linux-android"
-
-if [ "$3" ]; then
-    echo "setting c compiler to $3"
-    export C_COMPILER=$3
-else
-    echo "setting c compiler to clang"
-    export C_COMPILER=clang
-fi
-
-if [ "$4" ]; then
-    echo "setting c++ compiler to $4"
-    export CXX_COMPILER=$4
-else
-    echo "setting c++ compiler to clang++"
-    export CXX_COMPILER=clang++
-fi
-
-mkdir android
-cd android
-
-echo "downloading and setting up sdks"
-
-echo "downloading and extracting cmdline tools..."
-wget -nc https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip
-unzip -n commandlinetools-linux-7583922_latest.zip > /dev/null
+class String
+    def black;          "\e[30m#{self}\e[0m" end
+    def red;            "\e[31m#{self}\e[0m" end
+    def green;          "\e[32m#{self}\e[0m" end
+    def brown;          "\e[33m#{self}\e[0m" end
+    def blue;           "\e[34m#{self}\e[0m" end
+    def magenta;        "\e[35m#{self}\e[0m" end
+    def cyan;           "\e[36m#{self}\e[0m" end
+    def gray;           "\e[37m#{self}\e[0m" end
     
-echo "downloading and extracting ndk"
-wget -nc https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip
-unzip -n android-ndk-r17c-linux-x86_64.zip > /dev/null
+    def bg_black;       "\e[40m#{self}\e[0m" end
+    def bg_red;         "\e[41m#{self}\e[0m" end
+    def bg_green;       "\e[42m#{self}\e[0m" end
+    def bg_brown;       "\e[43m#{self}\e[0m" end
+    def bg_blue;        "\e[44m#{self}\e[0m" end
+    def bg_magenta;     "\e[45m#{self}\e[0m" end
+    def bg_cyan;        "\e[46m#{self}\e[0m" end
+    def bg_gray;        "\e[47m#{self}\e[0m" end
     
-echo "installing packages and accepting licenses..."
-chmod +x cmdline-tools/bin/sdkmanager
-yes | cmdline-tools/bin/sdkmanager --sdk_root=$(pwd) --install "build-tools;27.0.3" "tools" "platforms;android-25" "platform-tools" > /dev/null
-yes | cmdline-tools/bin/sdkmanager --sdk_root=$(pwd) --licenses > /dev/null
+    def bold;           "\e[1m#{self}\e[22m" end
+    def italic;         "\e[3m#{self}\e[23m" end
+    def underline;      "\e[4m#{self}\e[24m" end
+    def blink;          "\e[5m#{self}\e[25m" end
+    def reverse_color;  "\e[7m#{self}\e[27m" end
+end
 
-cd ..
-
-echo "setting up dex2jar..."
-wget -nc https://github.com/pxb1988/dex2jar/releases/download/v2.1/dex2jar-2.1.zip
-unzip -n dex2jar-2.1.zip > /dev/null
-
-echo "setting up apktool..."
-mkdir apktool
-cd apktool
-wget -nc https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.6.0.jar -O apktool.jar
-wget -nc https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O apktool
-chmod +x apktool
-cd ..
-
-echo "downloading vanilla wine for android..."
-wget -nc https://dl.winehq.org/wine-builds/android/wine-$2-x86.apk -O wine-vanilla.apk
-
-#rm -rf build
-mkdir build
-cd build
-
-echo setting up ndk...
-$NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-26 --install-dir=android-toolchain --arch=$TOOLCHAIN_VERSION --verbose
+def ignore_exception
+    begin
+      yield  
+    rescue Exception
+    end
+ end 
 
 
-if [ ! -d wine ]; then
-    echo "downloading wine source..."
-    wget -nc https://github.com/wine-mirror/wine/archive/$1.zip -O wine.zip
+# Parse arguments
+options = {}
+option_parser = OptionParser.new do |opts|
+    opts.banner = "Usage: make.rb -h <COMMIT HASH> -w <WINE VERSION> [options]"
 
-    echo "extracting..."
-    unzip wine.zip
-    mv wine-$1 wine
+    opts.on("-c", "--ccompiler=C", "C compiler name for NDK build") do |name|
+        options[:cc] = name
+    end
 
-    echo "copying..."
-    cp -r wine wine-native
+    opts.on("-x", "--cxxcompiler=CXX", "C++ compiler name for NDK build") do |name|
+        options[:cxx] = name
+    end
 
-    echo "patching..."
-    patch -p1 -d wine < ../wine-android-configure.patch
-    patch -p1 -d wine < ../wine-android-makefile-in.patch
-    patch -p1 -d wine < ../wine-android-gradle.patch
-    patch -p1 -d wine < ../wine-gradle-properties.patch
-    #read -p "Press any key to resume ..."
-fi
+    opts.on("-h", "--commithash=HASH", "Wine commit hash to clone") do |hash|
+        options[:commithash] = hash
+    end
 
-echo "building native wine"
-cd wine-native
-./configure --enable-win64 > /dev/null
-make -j`nproc` > /dev/null
+    opts.on("-w", "--wineversion=VER", "Wine version to patch") do |ver|
+        options[:wineversion] = ver
+    end
 
-cd ..
-export PATH=`pwd`/android-toolchain/bin:$PATH
+    opts.on("-f", "--freetypeversion=VER", "Freetype version to build") do |ver|
+        options[:freetypeversion] = ver
+    end
 
-echo "downloading freetype..."
-wget -nc https://download.savannah.gnu.org/releases/freetype/freetype-2.11.1.tar.xz
+    opts.on("-n", "--newpackagename=NAME", "New package name for the app") do |name|
+        options[:newpackagename] = name
+    end
 
-echo "extracting..."
-tar xf freetype-2.11.1.tar.xz
+    opts.on("-N", "--newappname=NAME", "New name for the app's activity in launcher") do |name|
+        options[:newappname] = name
+    end
 
-echo "building freetype 2.11.1 for android"
-cd freetype-2.11.1
-./configure --host=$TOOLCHAIN_TRIPLE --prefix=`pwd`/output --without-zlib --with-png=no --with-brotli=no --with-harfbuzz=no CC=$C_COMPILER CXX=$CXX_COMPILER > /dev/null
-make -j`nproc` > /dev/null && make install > /dev/null
-export FREETYPE_CFLAGS="-I`pwd`/../freetype-2.11.1/output/include/freetype2"
-export FREETYPE_LIBS="-L`pwd`/../freetype-2.11.1/output/lib"
+    opts.on("--clean", "Clean out build/ directory") do |x|
+        options[:clean] = true
+    end
 
-echo "here we go! making wine for android!"
-cd ../wine
-./configure --host=$TOOLCHAIN_TRIPLE host_alias=$TOOLCHAIN_TRIPLE \
-    --with-wine-tools=../wine-native --prefix=`pwd`/dlls/wineandroid.drv/assets --enable-win64 CC=$C_COMPILER CXX=$CXX_COMPILER > /dev/null
-autoreconf
-make -j`nproc` > /dev/null && make install > /dev/null
+    opts.on("--totallyclean", "Totally clean everything") do |x|
+        options[:totallyclean] = true
+    end
 
-echo "fixing apk!"
-cp ../freetype-2.11.1/output/lib/libfreetype.so dlls/wineandroid.drv/assets/x86_64/lib64/
-cd dlls/wineandroid.drv
-make clean > /dev/null
-make > /dev/null
-cd ../../../../
-echo `pwd`
+    opts.on("--tools", "Set up tooling") do |x|
+        options[:tools] = true
+    end
 
-echo "committing crimes..."
-cp wine-vanilla.apk wine-patched.apk
-bash gimmeapk .
-unzip wine-debug.apk classes.dex > /dev/null                                           # extract the DEX from our new build
-dex-tools-2.1/d2j-dex2jar.sh -f -o fresh-build.jar classes.dex > /dev/null             # convert it to a JAR
-rm classes.dex                                                                         # don't need the DEX anymore
-bash replaceclasses.sh wine-patched.apk fresh-build.jar org/winehq/wine > /dev/null    # patch the good, working build
-rm fresh-build.jar                                                                     # clean up
+    opts.on("--dlwine", "Download, copy, and patch Wine source") do |x|
+        options[:dlwine] = true
+    end
 
-echo "all done! the build is in wine-patched.apk"
-exit
+    opts.on("--nativewine", "Build native Wine") do |x|
+        options[:nativewine] = true
+    end
+
+    opts.on("--dlfreetype", "Download and extract freetype") do |x|
+        options[:dlfreetype] = true
+    end
+
+    opts.on("--freetype", "Build freetype for Android") do |x|
+        options[:freetype] = true
+    end
+
+    opts.on("--androidwine", "Build Wine for Android") do |x|
+        options[:androidwine] = true
+    end
+
+    opts.on("--dlvwine", "Download vanilla Wine") do |x|
+        options[:dlvwine] = true
+    end
+
+    opts.on("--crimes", "Patch vanilla Wine") do |x|
+        options[:crimes] = true
+    end
+end
+option_parser.parse!
+
+# require wine version and commit hash to be specified
+if options[:commithash].nil? or options[:wineversion].nil?
+    unless options[:totallyclean] or options[:clean]
+        puts option_parser.help
+        exit 1
+    else
+        options[:commithash] = "INVALID"
+        options[:wineversion] = "INVALID"
+    end
+end
+
+# establish defaults for missing params
+options[:cc] ||= "clang"
+options[:cxx] ||= "clang++"
+options[:freetypeversion] ||= "2.11.1"
+
+targets = [:clean, :totallyclean, :tools, :dlwine, :nativewine,\
+ :dlfreetype, :freetype, :androidwine, :dlvwine, :crimes]
+
+ # if there are no targets specified
+unless (options.keys & targets).any?
+    puts "No targets specified. Making all"
+
+    options[:tools] = true
+    options[:dlwine] = true
+    options[:nativewine] = true
+    options[:dlfreetype] = true
+    options[:freetype] = true
+    options[:androidwine] = true
+    options[:dlvwine] = true
+    options[:crimes] = true
+end
+
+for target in targets
+    if options[target].nil?
+        options[target] = false  # we don't want ANY nils, set nonexistent targets to false
+    end
+end
+
+puts options
+
+if options[:totallyclean] or options[:clean]
+    delete_directory = -> (dir) { FileUtils.remove_dir(dir) if File.directory?(dir) }
+    delete_directory.call("build")
+
+    if options[:totallyclean]
+        delete_directory.call("dex-tools-2.1")
+        delete_directory.call("apktool")
+        delete_directory.call("android")
+        delete_directory.call("org")
+        Dir.glob('*.zip').each { |file| File.delete(file)}
+    end
+end
+
+if options[:commithash] == "INVALID" or options[:wineversion] == "INVALID"
+    exit 1
+end
+
+if options[:tools]
+    puts " -> Downloading and setting up tools...".blue.reverse_color
+
+    FileUtils.mkdir_p "android"
+    Dir.chdir("android") do
+        puts "    -> cmdline-tools".green.reverse_color
+        `wget -nc https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip > /dev/null`
+        `unzip -n commandlinetools-linux-7583922_latest.zip > /dev/null`
+
+        puts "    -> NDK".green.reverse_color
+        `wget -nc https://dl.google.com/android/repository/android-ndk-r17c-linux-x86_64.zip  > /dev/null`
+        `unzip -n android-ndk-r17c-linux-x86_64.zip > /dev/null`
+
+        puts "    -> Installing required packages/accepting licenses".green.reverse_color
+        `chmod +x cmdline-tools/bin/sdkmanager`
+        `yes | cmdline-tools/bin/sdkmanager --sdk_root=$(pwd) --install "build-tools;27.0.3" "tools" "platforms;android-25" "platform-tools" > /dev/null`
+        `yes | cmdline-tools/bin/sdkmanager --sdk_root=$(pwd) --licenses > /dev/null`
+    end
+
+    puts "    -> dex2jar".green.reverse_color
+    `wget -nc https://github.com/pxb1988/dex2jar/releases/download/v2.1/dex2jar-2.1.zip  > /dev/null`
+    `unzip -n dex2jar-2.1.zip > /dev/null`
+
+    FileUtils.mkdir_p "apktool"
+    Dir.chdir("apktool") do
+        puts "    -> apktool".green.reverse_color
+        `wget -nc https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.6.0.jar -O apktool.jar > /dev/null`
+        `wget -nc https://raw.githubusercontent.com/iBotPeaches/Apktool/master/scripts/linux/apktool -O apktool  > /dev/null`
+        `chmod +x apktool`
+    end
+end
+
+# initial env setup
+ENV["ANDROID_HOME"] = "%s/android/" % [Dir.pwd]
+ENV["NDK_ROOT"] = "%s/android/android-ndk-r17c/" % [Dir.pwd]
+ENV["TOOLCHAIN_VERSION"] = "x86_64"
+ENV["TOOLCHAIN_TRIPLE"] = "x86_64-linux-android"
+
+FileUtils.mkdir_p "build"
+
+Dir.chdir("build") do
+    if options[:androidwine] or options[:freetype]
+        `$NDK_ROOT/build/tools/make-standalone-toolchain.sh --platform=android-26 --install-dir=android-toolchain --arch=$TOOLCHAIN_VERSION --verbose`
+    end
+
+    if options[:dlwine]
+        puts " -> Downloading Wine source...".blue.reverse_color
+        system("wget -nc https://github.com/wine-mirror/wine/archive/%s.zip -O wine.zip > /dev/null" % [options[:commithash]])
+        
+        puts "    -> Extracting!".green.reverse_color
+        `unzip -n wine.zip`
+
+        puts "    -> Copying!".green.reverse_color
+        FileUtils.mv("wine-%s" % [options[:commithash]], "wine", :force => true)
+        FileUtils.cp_r("wine", "wine-native", :remove_destination => true)
+
+        puts "    -> Patching!".green.reverse_color
+        `patch -p1 -d wine < ../wine-android-configure.patch`
+        `patch -p1 -d wine < ../wine-android-makefile-in.patch`
+        `patch -p1 -d wine < ../wine-android-gradle.patch`
+        `patch -p1 -d wine < ../wine-gradle-properties.patch`
+    end
+
+    if options[:nativewine]
+        puts " -> Building native wine".blue.reverse_color
+        Dir.chdir("wine-native") do
+            `./configure --enable-win64 > /dev/null`
+            system("make -j%d > /dev/null" % [Etc.nprocessors])
+        end
+    end
+
+    ENV["PATH"] = "%s/android-toolchain/bin:" % [Dir.pwd] + ENV["PATH"]
+    
+    if options[:dlfreetype]
+        puts " -> Downloading freetype source...".blue.reverse_color
+        system("wget -nc https://download.savannah.gnu.org/releases/freetype/freetype-%s.tar.xz" % [options[:freetypeversion]])
+        system("tar xf freetype-%s.tar.xz" % [options[:freetypeversion]])
+    end
+
+    if options[:freetype]
+        puts " -> Building freetype for Android...".blue.reverse_color
+
+        Dir.chdir("freetype-%s" % [options[:freetypeversion]]) do
+            system("./configure --host=$TOOLCHAIN_TRIPLE --prefix=%s/output --without-zlib \
+                --with-png=no --with-brotli=no --with-harfbuzz=no CC=%s CXX=%s > /dev/null" % [Dir.pwd, options[:cc], options[:cxx]])
+            system("make -j%d > /dev/null && make install > /dev/null" % [Etc.nprocessors])
+        end
+
+        ENV["FREETYPE_CFLAGS"] = "-I%s/freetype-2.11.1/output/include/freetype2" % [Dir.pwd]
+        ENV["FREETYPE_LIBS"] = "-L%s/freetype-2.11.1/output/lib" % [Dir.pwd]
+    end
+    
+    if options[:androidwine]
+        puts " -> Building Wine for Android!".blue.reverse_color
+
+        Dir.chdir("wine") do
+            puts "    -> Doing build!".green.reverse_color
+            system("./configure --host=$TOOLCHAIN_TRIPLE host_alias=$TOOLCHAIN_TRIPLE \
+                --with-wine-tools=../wine-native \
+                --prefix=%s/dlls/wineandroid.drv/assets --enable-win64 CFLAGS=-O3 CXXFLAGS=-O3 \
+                CC=%s CXX=%s > /dev/null" % [Dir.pwd, options[:cc], options[:cxx]])
+            system("autoreconf")
+            system("make -j%d > /dev/null && make install > /dev/null" % [Etc.nprocessors])
+        
+            puts "    -> Fixing APK".green.reverse_color
+            ignore_exception { FileUtils.cp("../freetype-2.11.1/output/lib/libfreetype.so", "dlls/wineandroid.drv/assets/x86_64/lib64/") }
+            ignore_exception { FileUtils.cp("../freetype-2.11.1/output/lib/libfreetype.so", "dlls/wineandroid.drv/assets/x86_64/lib/") }
+            Dir.chdir("dlls/wineandroid.drv") do
+                `make clean > /dev/null`
+                `make > /dev/null`
+            end
+        end
+    end
+end
+
+if options[:crimes]
+    puts " -> Committing crimes...".blue.reverse_color
+    FileUtils.cp("wine-vanilla.apk", "wine-patched.apk")
+    `bash gimmeapk .`
+    `unzip wine-debug.apk classes.dex > /dev/null`
+    `dex-tools-2.1/d2j-dex2jar.sh -f -o fresh-build.jar classes.dex > /dev/null`
+    FileUtils.rm("classes.dex")
+    `bash replaceclasses.sh wine-patched.apk fresh-build.jar org/winehq/wine > /dev/null`
+    FileUtils.rm("fresh-build.jar")
+end

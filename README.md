@@ -2,10 +2,10 @@
 Automated tools to patch and build Wine for Android.
 
 ## How to build
-- You're gonna need some prerequisites. Namely, Git, Gradle, Python (2), and whatever you need to build a normal version of Wine. On a Debian based system, you can get
+- You're gonna need some prerequisites. Namely, Git, Gradle, Python (2), Ruby, and whatever you need to build a normal version of Wine. On a Debian based system, you can get
   everything you need with:
   ```
-  sudo apt install gradle python git
+  sudo apt install gradle python ruby git
   sudo apt build-dep wine
   ```
 - Now that you've got everything, IN THEORY, you should be able to clone this repo into a folder somewhere, then run `./make <wine commit hash> <compatible vanilla wine version>`. 
@@ -32,8 +32,8 @@ Automated tools to patch and build Wine for Android.
 - Not broken (I guess), but Gradle's default config doesn't have nearly enough heap space allocated for packaging the assets in the APK. I just added a
   `gradle.properties` file to give it a few more gigs.
 - Like all cross compilation thingies, these build steps are absurdly sensitive to the environment. That's why:
-    * The script sucks. I'm way too dumb to get a better, less awful, hardcoded script working right now. I probably will eventually. You can see my pathetic failed
-      attempt in `make.py` (which you shouldn't use lmao)
+    * ~~The script sucks. I'm way too dumb to get a better, less awful, hardcoded script working right now. I probably will eventually. You can see my pathetic failed
+      attempt in `make.py` (which you shouldn't use lmao)~~ **2022/01/13 - the script's been rewritten in Ruby. much cleaner.**
     * You should really build this in a Docker container or something. The cleaner the environment the better. I did all my testing in a Debian 11 VM. A container
       would have been easier. Seriously.
 - Some versions after 6.5 hang on "Setting up Windows environment...". Reason unknown. Some change between 6.4 and 6.5?
