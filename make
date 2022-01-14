@@ -296,4 +296,17 @@ if options[:crimes]
     FileUtils.rm("classes.dex")
     `bash replaceclasses.sh wine-patched.apk fresh-build.jar org/winehq/wine > /dev/null`
     FileUtils.rm("fresh-build.jar")
+    FileUtils.rm_rf("wine-patched")
 end
+
+if options[:newpackagename] or options[:newappname]
+    # set defaults if nothing was specified
+    options[:newpackagename] ||= "org.winehq.wine"
+    options[:newappname] ||= "Wine"
+
+    puts " -> Replacing package/app name...".blue.reverse_color
+    puts "    -> New package name is %s, new app name is %s".green.reverse_color % [options[:newpackagename], options[:newappname]]
+    system("bash replacenames %s %s wine-patched.apk" % [options[:newpackagename], options[:newappname]])
+end
+
+puts "########## BUILD COMPLETE! ##########".reverse_color
