@@ -14,7 +14,7 @@ Automated tools to patch and build Wine for Android.
   If you want to use the full build that the script makes, use `wine-debug.apk`. Otherwise, you're mostly going to want `wine-patched.apk` instead.
 
 ### Recommended (known working) Wine commit hash/version combos
-- "4336ed0b84b3dd3097bbbbf8e4b9de2e4d444ad7 6.4" - Wine 6.4 release version
+- "4336ed0b84b3dd3097bbbbf8e4b9de2e4d444ad7 6.4" - Wine 6.4 release version **(THIS IS THE MOST COMPATIBLE VERSION I'VE FOUND)**
     * You can safely ignore the wine-android-configure patch failure. That part of configure.ac is irrelevant in this old version, since the Makefile.in patch covers that change.
 - "86eaf7eeb2603d1b13d18e3fe71a615e1ee14cee 7.0-rc5" - Wine 7.0-rc5 release candidate
     * You can safely ignore the wine-android-makefile-in patch failure. That part of Makefile.in is irrelevant in this old version, since the configure.ac patch covers that change.
