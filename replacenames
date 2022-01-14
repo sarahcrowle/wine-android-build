@@ -5,7 +5,7 @@
 NEW_PACKAGE_NAME=$1
 NEW_APP_NAME=$2
 APK=$3
-APK_BASENAME=$(basename $APK .apk)
+APK_BASENAME=`basename $APK .apk`
 
 echo "decompiling apk..."
 apktool/apktool d $APK > /dev/null
@@ -23,4 +23,4 @@ echo "signing..."
 dex-tools-2.1/d2j-apk-sign.sh -f -o $APK_BASENAME-rn.apk $APK_BASENAME-unsigned.apk
 
 rm $APK_BASENAME-unsigned.apk
-#rm -rf $APK_BASENAME
+rm -rf $APK_BASENAME
