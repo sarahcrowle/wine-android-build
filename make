@@ -127,7 +127,8 @@ option_parser.parse!
 unless options[:project].nil?
     all_option_types = [:cc, :cxx, :commithash, :wineversion, :freetypeversion, \
                     :newpackagename, :newappname, :iconfile, :clean, :totallyclean, \
-                    :tools, :dlwine, :nativewine, :dlfreetype, :freetype, :androidwine, :dlvwine, :crimes, :injectedsoftwaredir, :injectedsoftwaremain]
+                    :tools, :dlwine, :nativewine, :dlfreetype, :freetype, :androidwine, \
+                    :dlvwine, :crimes, :injectedsoftwaredir, :injectedsoftwaremain]
     
     project = YAML.load(File.read(options[:project] + "/wine-package.yml").gsub! "$PROJECTDIR", File.expand_path(options[:project]))
     
