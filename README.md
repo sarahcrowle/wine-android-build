@@ -19,6 +19,75 @@ Automated tools to patch and build Wine for Android.
 - "86eaf7eeb2603d1b13d18e3fe71a615e1ee14cee 7.0-rc5" - Wine 7.0-rc5 release candidate
     * You can safely ignore the wine-android-makefile-in patch failure. That part of Makefile.in is irrelevant in this old version, since the configure.ac patch covers that change.
 
+### Automating the process (injecting software into the build)
+Recently, support was added for "projects". This feature (as well as making builds more repeatable) lets you inject arbitrary software into the APK that runs at Wine startup. 
+Essentially, this lets you package Windows software for Android!
+
+A basic project consists of a directory with a `wine-package.yml` inside. Any option that can be supplied on the command line can be specified in here (plus more). There are also additional, 
+exclusive options. There's a full list of options below. A basic `wine-package.yml` looks like this (pulled from the sample project located in `sample-project/`):
+
+```yaml
+---
+:commithash: "4336ed0b84b3dd3097bbbbf8e4b9de2e4d444ad7"
+:wineversion: "6.4"
+:iconfile: $PROJECTDIR/bread-icon.png
+:newpackagename: com.picsofbread.wine
+:newappname: PicsOfWine
+:injectedsoftwaredir: $PROJECTDIR/bread-hello/
+:injectedsoftwaremain: bread-hello\\bread-hello-vc2008.exe
+```
+
+`$PROJECTDIR` gets replaced with the full path to the project directory.
+
+Note the options `:injectedsoftwaredir` and `:injectedsoftwaremain` above. These specify both the directory where the software lives, and the relative path within the install dir that Wine needs 
+to execute it. As long as these options are specified correctly, software injection *should* work.
+
+To build using a project, run `./make -p <project dir>`. Any options not specified in the `wine-package.yml` will be replaced with (somewhat) sane defaults.
+
+#### Full list of project options, and what they do
+- `:cc`
+  * Specify a different C compiler for building the Android stuff (default: clang)
+- `:cxx`
+  * Specify a different C++ compiler for building the Android stuff (default: clang++)
+- `:commithash`
+  * Specify a Wine Git commit hash to build from (required, no default)
+- `:wineversion`
+  * Specify a Wine vanilla version to patch (required, no default)
+- `:freetypeversion`
+  * Specify a version of Freetype to build for Android (default: 2.11.1)
+- `:newpackagename`
+  * Specify a new name for the patched Wine app (default: n/a)
+- `:newappname`
+  * Specify a new app title for the patched Wine app (default: n/a)
+- `:iconfile`
+  * Specify a PNG app icon for the patched Wine app (default: n/a)
+- `:injectedsoftwaredir`
+  * Specify a directory to inject into the patched Wine app (default: n/a)
+- `:injectedsoftwaremain`
+  * Specify what executable/command Wine should run to execute your injected software (default: n/a)
+
+#### Full list of project target options, and what they do
+- `:clean`
+  * Set to true to clean out the `build/` directory
+- `:totallyclean`
+  * Set to true to clean out the `build/` directory AND the tools directories
+- `:tools`
+  * Set to true to download and set up tools
+- `:dlwine`
+  * Set to true to download, extract, and patch the Wine source directories
+- `:nativewine`
+  * Set to true to build native Wine
+- `:dlfreetype`
+  * Set to true to download/extract Freetype
+- `:freetype`
+  * Set to true to build Freetype for Android
+- `:androidwine`
+  * Set to true to build Wine for Android
+- `:dlvwine`
+  * Set to true to download vanilla Wine APK
+- `:crimes`
+  * Set to true to commit crimes (apply patches to vanilla Wine)
+
 ## Interesting notes (aka the WTF section)
 
 - ~~At the moment, Wine must be built using a REALLY old NDK. (r15c to be exact). This is because of the new "unified headers" stuff that got deprecated not long
