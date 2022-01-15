@@ -309,7 +309,7 @@ Dir.chdir("build") do
                 FileUtils.rm("dlls/wineandroid.drv/WineActivity.java")
 
                 patch_text = File.read("dlls/wineandroid.drv/WineActivity.java.old")
-                patch_new = patch_text.sub "cmdline };", "\"%s\%s\" };" % ["Z:\\\\data\\\\user\\\\0\\\\com.picsofbread.wine\\\\files\\\\x86\\\\lib\\\\wine\\\\", options[:injectedsoftwaremain]]
+                patch_new = patch_text.sub "cmdline };", "\"%s\%s\" };" % ["Z:\\\\data\\\\user\\\\0\\\\%s\\\\files\\\\x86\\\\lib\\\\wine\\\\" % [options[:newpackagename]], options[:injectedsoftwaremain]]
                 File.open("dlls/wineandroid.drv/WineActivity.java", "w") {|file| file.puts(patch_new)}
             end
 
