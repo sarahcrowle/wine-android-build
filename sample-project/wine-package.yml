@@ -1,0 +1,8 @@
+---
+:commithash: "4336ed0b84b3dd3097bbbbf8e4b9de2e4d444ad7"
+:wineversion: "6.4"
+:iconfile: $PROJECTDIR/bread-icon.png
+:newpackagename: com.picsofbread.wine
+:newappname: PicsOfWine
+:injectedsoftwaredir: $PROJECTDIR/bread-hello/
+:injectedsoftwaremain: bread-hello\\bread-hello-vc2008.exe
