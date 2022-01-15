@@ -2,10 +2,10 @@
 Automated tools to patch and build Wine for Android.
 
 ## How to build
-- You're gonna need some prerequisites. Namely, Git, Gradle, Python (2), Ruby, and whatever you need to build a normal version of Wine. On a Debian based system, you can get
+- You're gonna need some prerequisites. Namely, Git, Gradle, rsync, Python (2), Ruby, and whatever you need to build a normal version of Wine. On a Debian based system, you can get
   everything you need with:
   ```
-  sudo apt install gradle python ruby git
+  sudo apt install gradle python ruby git rsync
   sudo apt build-dep wine
   ```
 - Now that you've got everything, IN THEORY, you should be able to clone this repo into a folder somewhere, then run `./make <wine commit hash> <compatible vanilla wine version>`. 
