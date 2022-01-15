@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# usage: ./replacenames <new icon file> <apk>
+
+SOFTWARE_DIR=$1
+APK=$2
+APK_BASENAME=`basename $APK .apk`
+SOFTWARE_DIR_BASENAME=`basename $SOFTWARE_DIR`
+
+echo "decompiling apk..."
+apktool/apktool d $APK > /dev/null
+
+echo "injecting software..."
+cd $APK_BASENAME
+rsync -av --info=progress2 $SOFTWARE_DIR assets/x86/lib/wine/$SOFTWARE_DIR_BASENAME
+sh -c "(test -d assets && rm -f assets/files.sum assets/sums.sum && sha256sum \$(find assets -type f -print) | sed 's/ assets\\// /' >files.sum && sha256sum files.sum >sums.sum && mv files.sum sums.sum assets)"
+cd ..
+
+echo "rebuilding apk..."
+apktool/apktool b $APK_BASENAME -o $APK_BASENAME-unsigned.apk > /dev/null
+
+echo "signing..."
+dex-tools-2.1/d2j-apk-sign.sh -f -o $APK_BASENAME.apk $APK_BASENAME-unsigned.apk
+
+rm $APK_BASENAME-unsigned.apk
+rm -rf $APK_BASENAME

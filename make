@@ -127,9 +127,9 @@ option_parser.parse!
 unless options[:project].nil?
     all_option_types = [:cc, :cxx, :commithash, :wineversion, :freetypeversion, \
                     :newpackagename, :newappname, :iconfile, :clean, :totallyclean, \
-                    :tools, :dlwine, :nativewine, :dlfreetype, :freetype, :androidwine, :dlvwine, :crimes]
+                    :tools, :dlwine, :nativewine, :dlfreetype, :freetype, :androidwine, :dlvwine, :crimes, :injectedsoftwaredir, :injectedsoftwaremain]
     
-    project = YAML.load(File.read(options[:project] + "/wine-package.yml").sub! "$PROJECTDIR", File.expand_path(options[:project]))
+    project = YAML.load(File.read(options[:project] + "/wine-package.yml").gsub! "$PROJECTDIR", File.expand_path(options[:project]))
     
     for option in all_option_types
         unless options.key?(option)
@@ -295,6 +295,24 @@ Dir.chdir("build") do
         puts " -> Building Wine for Android!".blue.reverse_color
 
         Dir.chdir("wine") do
+            # FIXME: hax
+            if options[:injectedsoftwaremain]
+                puts "    -> Patching the Wine activity!".green.reverse_color
+
+                if File.file?("dlls/wineandroid.drv/WineActivity.java.old")
+                    FileUtils.rm("dlls/wineandroid.drv/WineActivity.java")
+                    FileUtils.cp("dlls/wineandroid.drv/WineActivity.java.old", "dlls/wineandroid.drv/WineActivity.java")
+                    FileUtils.rm("dlls/wineandroid.drv/WineActivity.java.old")
+                end
+
+                FileUtils.cp("dlls/wineandroid.drv/WineActivity.java", "dlls/wineandroid.drv/WineActivity.java.old")
+                FileUtils.rm("dlls/wineandroid.drv/WineActivity.java")
+
+                patch_text = File.read("dlls/wineandroid.drv/WineActivity.java.old")
+                patch_new = patch_text.sub "cmdline };", "\"%s\%s\" };" % ["Z:\\\\data\\\\user\\\\0\\\\com.picsofbread.wine\\\\files\\\\x86\\\\lib\\\\wine\\\\", options[:injectedsoftwaremain]]
+                File.open("dlls/wineandroid.drv/WineActivity.java", "w") {|file| file.puts(patch_new)}
+            end
+
             puts "    -> Doing build!".green.reverse_color
             system("./configure --host=$TOOLCHAIN_TRIPLE host_alias=$TOOLCHAIN_TRIPLE \
                 --with-wine-tools=../wine-native \
@@ -341,6 +359,11 @@ if options[:iconfile]
     options[:iconfile] = File.expand_path(options[:iconfile])
     puts "    -> New icon file path is %s".green.reverse_color % [options[:iconfile]]
     system("bash replaceicons %s wine-patched.apk" % [options[:iconfile]])
+end
+
+if options[:injectedsoftwaredir]
+    puts " -> Injecting software files...".blue.reverse_color
+    system("bash injectsoftware %s wine-patched.apk" % [options[:injectedsoftwaredir]])
 end
 
 puts "########## BUILD COMPLETE! ##########".reverse_color
